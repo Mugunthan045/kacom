@@ -1,0 +1,7 @@
+venv/
+flush.sh
+__pycache__/
+*.env
+.env.*
+.dockerignore
+

@@ -1,0 +1,36 @@
+lua_package_path "/usr/local/openresty/lualib/?.lua;;";
+lua_package_cpath "/usr/local/openresty/lualib/?.so;;";
+
+upstream model_service_host{
+    server model_service:8000;
+}
+upstream user_service_host{
+    server user_service:8000;
+}
+
+server {
+
+  listen 8080;
+  location /user_service_health{
+      proxy_pass http://user_service_host/health;
+      proxy_set_header HOST $host;
+      proxy_set_header X-Real-IP $remote_addr;
+    }
+
+  location /model_service_health{
+      proxy_pass http://model_service_host/health;
+      proxy_set_header HOST $host;
+      proxy_set_header X-Real-IP $remote_addr;
+    }
+
+  location /health{
+    content_by_lua_block{
+        local user_service_res = ngx.location.capture("/user_service_health");
+        local model_service_res = ngx.location.capture("/model_service_health");
+
+        ngx.header.content_type = "text/plain"
+        ngx.say(user_service_res.body .. model_service_res.body);
+      }
+    }
+
+}
